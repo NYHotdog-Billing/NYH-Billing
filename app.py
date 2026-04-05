@@ -7,7 +7,7 @@ from google.oauth2.service_account import Credentials
 # --- पेज की सेटिंग ---
 st.set_page_config(page_title="New York's Hotdog", page_icon="🌭", layout="wide")
 
-# --- 1. गूगल शीट से कनेक्शन (असली ब्रह्मास्त्र टोटका) ---
+# --- 1. गूगल शीट से कनेक्शन (Pro Tip: Direct JSON Injection) ---
 @st.cache_resource
 def init_connection():
     try:
@@ -16,49 +16,18 @@ def init_connection():
             "https://www.googleapis.com/auth/drive"
         ]
         
-        # यह है कोडिंग का सबसे पक्का तरीका! हर लाइन अलग से लॉक है।
-        my_private_key = (
-            "-----BEGIN PRIVATE KEY-----\n"
-            "MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDGSHdXOKUK30bH\n"
-            "3HYUyaFj4ujl5tjZ2mhGuKzNXC/AHw9wNqaYb+Jbdg4GUnMpBNZM33z0Y9rgO/QP\n"
-            "N3JYgBEx+UqfZjln9tGmrNPo062e3ci8Zc44rmqSMLNVIWHIfxFzfgExdKNqa7zz\n"
-            "T1lprG+l1vzbnpGXHpupzIB/VvExu3cXK7TERIO0xB19KV+DJqSPNBnGOml6q3wh\n"
-            "mNxXYWsRVVFRk5OuErFwdcjHkHENNDqM5ZmqcUlipQZcyY6RCwnu2jJymhKLIPvd\n"
-            "NKcd4HX1X6B3V34H8YEgZF7eDqc7QgEr/+L6R2iwpAwYJ0DkZpobJlIp/TKt1O0D\n"
-            "3YVe6rB5AgMBAAECggEALsSDX391EBwrO/NAJ7WKGz73O1ioX7P/4eRnn7Vlbt10\n"
-            "P1K7IwBOhzdgHi8gFmLeUzCUntl8fs6HMexcPXd+GlKBFBObHrfJr6/abxZyG2b\n"
-            "zfH+QsjCyrHxbnwl7e4ordKz0dgmvjBkvAfEeWQKXnWXpO5g/SGjShi52y8kyxt3\n"
-            "1xu7/v998eu7FNhdgG8EjfSKyXhNOzyEjMe45p7+4JTrjr9T7MmgWsTgdNZn3Lpo\n"
-            "h4Vx6Glx1R84SKnaLHMTE+3GXzZ7xmR6Ev90mHR0eHKaLiNPdw5s/zrbjLZ9kI6a\n"
-            "2svyIMEzV4kJZlprUlNZG2L0nlMzcndAkIZZoQ9wPQKBgQDk5vCHNkSjb0K+lf6k\n"
-            "mpliXFgZ5mDEtvMD/E5NXwepXiJ0bGjzD2aZm5Ld3EpUJokxLdCgN2UsB85C0Q7Z\n"
-            "4HHIq+j8AXEtvUc4QZP1DTOt0DzscK9uNEoAgdy8rgsXSd+f+1VcEALBKfDUtAD+\n"
-            "4NYD/eXAKte177lllWsoSdI+5QKBgQDdwZekVijES/x2W0yxCG6SHIRA/j4mkBhQ\n"
-            "HLU/US/ee3HCoV/1y/IdrfBQ7cTFK20Qb5s6wtq5k4K+9dS8C9wM24DCwwIIbwAE\n"
-            "XOfSDxFReQV2UaEogEpyqN/vAX8s1ud2ni075LPJhtWl+P8zCMqMPWenoiqJwLu7\n"
-            "5rdSewQ+BQKBgD0RD2JDLBSd/iRyR7kKNZl0IVznhTF1zWdmzEz/6T9aCb8dnPIb\n"
-            "Tbf1NT1TI9FHZppkKqBTpv4UJwbUVy3xHun2UvXIPLWDJZjwhdR+bScVwushNOwl\n"
-            "rwhrnMQJepP/9VTs7FzfOJzn34QfcZSNzwrJlZ2q0FmNVtyu/COHbjuxAoGALPgX\n"
-            "MkIuni/ykGXPVY8qLQMPZsan/9X0uDo6Hw7tsCZEWX20IforrQ0a0K6G2p0FzvFy\n"
-            "/yWIiV16hBMCAug8xXa108kL3n3z+O6GLDjWADmUe/vtvHLXpgzM7IDXM1aZNZq5\n"
-            "/Y1RUCrBpJir18OOn4XMQVhHXAvzhhUxU86Se6kCgYBwjpGwnyKWbd2l5V+ClIPq\n"
-            "XkcXImoSo6dNuVdFzmo7RJPpbTuZNJ04ZNS7en6Ldc45D98rzci6gmQC8av3ztHh\n"
-            "R6LatdVMfWfS+WGemaUWGpSHe97Vmf6A6O0Wd9xmidF70PQKUXPdppLrt4N4pTHl\n"
-            "EihXF7HxqsEWO/1qwKs1EA==\n"
-            "-----END PRIVATE KEY-----\n"
-        )
-        
+        # आपकी नई और एकदम सही चाबी सीधा कोड के अंदर
         credentials_dict = {
           "type": "service_account",
           "project_id": "hotdog-billing-492413",
-          "private_key_id": "ba0b5204f4a3b792371528594bea6feed35c083a",
-          "private_key": my_private_key,
-          "client_email": "hotdog-app@hotdog-billing-492413.iam.gserviceaccount.com",
-          "client_id": "101024134007123863664",
+          "private_key_id": "417ab2c8f943b22966b94bc7d64472a7bd9603d3",
+          "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDJeuWd17ZaG27/\nPSIqojgr9mBznbkZP9CzHN56A762LaJAZ0jdNJEBRFi16A2ByzkB0psrYNWVfm2/\nfXhqONwk+57gFJSVCouGs5S8w7Lo0Qg4KEwPaM2bdrao2MAWju86Hte4VA9ozGEd\nJJzid+jZMsqeJ37j0aBDm+3c4945BCZbd7NET8YmZN1cPSlRHepToIrTf/b9g+Ey\nUiGtEawLwo+5wFriftBAFIYHoV9cdb8K6vy8bvvWBpwcmxprCTZsab0UdvjHK6oL\nnawHJ9064phF61H4PZs9z0hX7T1GRLVFnlCwKFwmBzK7dIlfLB8qyNlIUVputN3K\nvYNevoWtAgMBAAECggEAIxkCE+eGcBb0VIk5QPUGVP4z2iAhJPldaT4/sUCiwcic\nSZzUcBhepDpcO8ADTldxBFTETB+vxT2Db8azKcni65xblkxvf7EZEiuJXwK2UWFM\njb/TVCHdI1ZgRnSPrb5ThSvnR0h5cLeduT5uB/N8gA2dh0R5EcWsJertWjvls8eq\nninQJ1TMsxc9yoj3PKadLt2rUdrEDod5lQk6UrHGStdecENprkzo/HDpXZXq+CYL\nH9Nob0nqG4sL8Ql7iZoUzrGsnLQ0O9aEAPQxZFkrewhhXZP0oA/X3N9F3alYwmm0\nnnN7IxkxUtH5lAQnMATqSm724fyEwQe8scX68thiQQKBgQDqibWMGdMFa63HMvKl\n9zyDl9ZAdj0AXpVk2nnLccCZ04e5GkmovO4E6iNY7DB0CiNGwmh4yY6SGHjcEmOM\nbTGR8B706WTP5B8pHWJ11O2eeeqamPxdkh+HOGVI+LkXCf5WkHLyxX/G2Q0UBfsL\nir55STlC8SCNt9qOVr8O2j34YQKBgQDb6sYJURoZYkQq9tq8c00ShZhwP6NR5qoL\nz0RD5BBeMEEtkVntc934XaWc2w5sBVSD+AqtarwOLJ1hOw64LgoWLbsse7upaEYI\n/4m4cXjd+tYOEXOb0FEYAfrtfY+ENREDF5ttYECM3n0k0c09SmLD+iGrpOnP5bfu\nCH2rwyKgzQKBgQDW7ErJkACoPvyIRk/FdsKldEaJ29AavpH4UZy6qgrs68K8BTLq\nxfb32fd6TTY5n/CjrxM9XLahenuGb/N5g7ahHYHAvP/84fcMHjlT8UOurdomwXrB\n5F2v9CYcsJAsZKQFf2lWv1VQSyaI6tIayZGyYz9t8Lj8JTbKqQN8ANI5AQKBgQCm\nqPs/oEjJJ+FFNiJ6Yl7sRHZLys54iPghTwgK81E8MBGU+OxPuVlkmYOipZf+YOO1\nx0pANf0iOMlkIB99kNZwDGQmx/Zl4fIBa7bxIn1YrHl/29XjJTHvocCKLneO17B2\nyXMupp0EpK/uMVj6s965alwN+kJ/HTYQnDqw6obZmQKBgQDj8cehbi+g6oFD8Dbj\nUNS+Oz+CrXxPha7baPYmvA7r1q5sg7J5xslSdAyEHimnVi3j0/0h4tSPYyN91x30\nd1o+hinqiz1Cqzx1BVSE4XXnJE4vzrbC7o8eOJfeWrJnxgdL1ZaSIZhEzMpG8Ffo\n1VQOZkZi93FUcJr9RZNpZk3Lbg==\n-----END PRIVATE KEY-----\n",
+          "client_email": "hotdog-app-new@hotdog-billing-492413.iam.gserviceaccount.com",
+          "client_id": "107807598057562047821",
           "auth_uri": "https://accounts.google.com/o/oauth2/auth",
           "token_uri": "https://oauth2.googleapis.com/token",
           "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-          "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/hotdog-app%40hotdog-billing-492413.iam.gserviceaccount.com",
+          "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/hotdog-app-new%40hotdog-billing-492413.iam.gserviceaccount.com",
           "universe_domain": "googleapis.com"
         }
         
