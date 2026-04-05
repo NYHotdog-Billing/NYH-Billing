@@ -7,7 +7,7 @@ from google.oauth2.service_account import Credentials
 # --- पेज की सेटिंग ---
 st.set_page_config(page_title="New York's Hotdog", page_icon="🌭", layout="wide")
 
-# --- 1. गूगल शीट से कनेक्शन (ब्रह्मास्त्र के साथ) ---
+# --- 1. गूगल शीट से कनेक्शन (ब्रह्मास्त्र 2.0 - मोबाइल एरर फिल्टर) ---
 @st.cache_resource
 def init_connection():
     try:
@@ -16,9 +16,17 @@ def init_connection():
             "https://www.googleapis.com/auth/drive"
         ]
         
-        # यह हिस्सा मोबाइल के कॉपी-पेस्ट वाले PEM एरर को खुद बैकग्राउंड में ठीक करेगा
         credentials_dict = dict(st.secrets["gcp_service_account"])
-        credentials_dict["private_key"] = credentials_dict["private_key"].replace("\\n", "\n")
+        raw_key = credentials_dict["private_key"]
+        
+        # 1. BEGIN और END को हटाएँ
+        clean_key = raw_key.replace("-----BEGIN PRIVATE KEY-----", "").replace("-----END PRIVATE KEY-----", "")
+        # 2. सारे फालतू स्पेस, \n और मोबाइल के अदृश्य कैरेक्टर हटाएँ
+        clean_key = clean_key.replace(" ", "").replace("\\n", "").replace("\n", "").strip()
+        # 3. चाबी को एकदम शुद्ध रूप में दोबारा बनाएँ
+        perfect_key = f"-----BEGIN PRIVATE KEY-----\n{clean_key}\n-----END PRIVATE KEY-----\n"
+        
+        credentials_dict["private_key"] = perfect_key
         
         creds = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
         return gspread.authorize(creds)
@@ -28,7 +36,6 @@ def init_connection():
 
 client = init_connection()
 
-# ध्यान दें: "NYH_Billing" की जगह अपनी गूगल शीट का असली नाम लिखें
 SHEET_NAME = "NYH_Billing" 
 
 st.title("🌭 New York's Hotdog - Billing System")
@@ -51,7 +58,6 @@ with tab1:
     st.markdown("---")
     st.subheader("Select Items from Menu")
 
-    # --- आपका असली मेन्यू ---
     menu = {
         "New York's Hotdog (Classic)": 99,
         "Cheese Hotdog (Cheese Sausage)": 109,
@@ -99,7 +105,7 @@ with tab1:
         elif not selected_items:
             st.warning("कृपया कम से कम 1 Item चुनें!")
         elif client is None:
-             st.error("गूगल शीट से कनेक्शन नहीं है। कृपया Secrets चेक करें।")
+             st.error("गूगल शीट से कनेक्शन नहीं है।")
         else:
             try:
                 sheet = client.open(SHEET_NAME).sheet1 
