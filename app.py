@@ -3,11 +3,13 @@ import pandas as pd
 from datetime import datetime
 import gspread
 from google.oauth2.service_account import Credentials
+import re
+import textwrap
 
 # --- पेज की सेटिंग ---
 st.set_page_config(page_title="New York's Hotdog", page_icon="🌭", layout="wide")
 
-# --- 1. गूगल शीट से कनेक्शन (ब्रह्मास्त्र 2.0 - मोबाइल एरर फिल्टर) ---
+# --- 1. गूगल शीट से कनेक्शन (असली और सही फिल्टर) ---
 @st.cache_resource
 def init_connection():
     try:
@@ -19,19 +21,21 @@ def init_connection():
         credentials_dict = dict(st.secrets["gcp_service_account"])
         raw_key = credentials_dict["private_key"]
         
-        # 1. BEGIN और END को हटाएँ
-        clean_key = raw_key.replace("-----BEGIN PRIVATE KEY-----", "").replace("-----END PRIVATE KEY-----", "")
-        # 2. सारे फालतू स्पेस, \n और मोबाइल के अदृश्य कैरेक्टर हटाएँ
-        clean_key = clean_key.replace(" ", "").replace("\\n", "").replace("\n", "").strip()
-        # 3. चाबी को एकदम शुद्ध रूप में दोबारा बनाएँ
-        perfect_key = f"-----BEGIN PRIVATE KEY-----\n{clean_key}\n-----END PRIVATE KEY-----\n"
+        # 1. चाबी में से सारा कचरा और फालतू लाइनें हटाएँ
+        clean_key = re.sub(r'-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\\n|\n|\s', '', raw_key)
+        
+        # 2. कोड को बिल्कुल सही 64 अक्षरों की लाइनों में बाँटें (यही पिछली बार छूट गया था)
+        wrapped_key = "\n".join(textwrap.wrap(clean_key, 64))
+        
+        # 3. एकदम शुद्ध चाबी तैयार करें
+        perfect_key = f"-----BEGIN PRIVATE KEY-----\n{wrapped_key}\n-----END PRIVATE KEY-----\n"
         
         credentials_dict["private_key"] = perfect_key
         
         creds = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
         return gspread.authorize(creds)
     except Exception as e:
-        st.error(f"प्रमाणीकरण (Authentication) एरर: {e}. कृपया Secrets चेक करें।")
+        st.error(f"प्रमाणीकरण (Authentication) एरर: {e}")
         return None
 
 client = init_connection()
@@ -105,7 +109,7 @@ with tab1:
         elif not selected_items:
             st.warning("कृपया कम से कम 1 Item चुनें!")
         elif client is None:
-             st.error("गूगल शीट से कनेक्शन नहीं है।")
+             st.error("गूगल शीट से कनेक्शन नहीं है। कृपया थोड़ी देर बाद प्रयास करें।")
         else:
             try:
                 sheet = client.open(SHEET_NAME).sheet1 
