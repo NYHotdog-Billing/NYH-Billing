@@ -7,7 +7,7 @@ from google.oauth2.service_account import Credentials
 # --- पेज की सेटिंग ---
 st.set_page_config(page_title="New York's Hotdog", page_icon="🌭", layout="wide")
 
-# --- 1. गूगल शीट से कनेक्शन (Pro Tip: Direct JSON Injection) ---
+# --- 1. गूगल शीट से कनेक्शन ---
 @st.cache_resource
 def init_connection():
     try:
@@ -16,7 +16,6 @@ def init_connection():
             "https://www.googleapis.com/auth/drive"
         ]
         
-        # आपकी नई और एकदम सही चाबी सीधा कोड के अंदर
         credentials_dict = {
           "type": "service_account",
           "project_id": "hotdog-billing-492413",
@@ -43,8 +42,10 @@ SHEET_NAME = "NYH_Billing"
 
 st.title("🌭 New York's Hotdog - Billing System")
 
-tab1, tab2 = st.tabs(["🧾 New Bill", "📈 Profit & Loss"])
+# --- तीन टैब्स बना दिए गए हैं ---
+tab1, tab2, tab3 = st.tabs(["🧾 New Bill", "📈 Profit & Loss", "📦 Inventory"])
 
+# --- TAB 1: New Bill ---
 with tab1:
     st.header("🧾 Create New Bill")
     
@@ -101,8 +102,6 @@ with tab1:
     if st.button("Complete & Save Transaction", type="primary"):
         if not customer_name:
             st.warning("कृपया Customer Name भरें!")
-        elif not mobile_number:
-            st.warning("कृपया Mobile Number भरें!")
         elif not selected_items:
             st.warning("कृपया कम से कम 1 Item चुनें!")
         elif client is None:
@@ -110,6 +109,10 @@ with tab1:
         else:
             try:
                 sheet = client.open(SHEET_NAME).sheet1 
+                # अगर शीट खाली है तो हेडिंग डालें
+                if len(sheet.get_all_values()) == 0:
+                    sheet.append_row(["Date", "Time", "Customer Name", "Mobile", "Staff", "Items", "Total Amount", "Discount", "Final Amount"])
+                
                 time_str = datetime.now().strftime("%H:%M:%S")
                 date_str = date_of_bill.strftime("%Y-%m-%d")
                 items_str = ", ".join(selected_items)
@@ -122,6 +125,7 @@ with tab1:
             except Exception as e:
                 st.error(f"गूगल शीट में डेटा सेव करने में एरर: {e}")
 
+# --- TAB 2: Profit & Loss ---
 with tab2:
     st.header("📈 Profit & Loss / Sales Dashboard")
     st.write("यहाँ आप अपने कैफे की पूरी सेल का डेटा देख सकते हैं।")
@@ -137,10 +141,62 @@ with tab2:
                 if data:
                     df = pd.DataFrame(data)
                     st.dataframe(df, use_container_width=True)
-                    
-                    total_sales = df.iloc[:, -1].sum() 
+                    total_sales = df["Final Amount"].sum() if "Final Amount" in df.columns else df.iloc[:, -1].sum()
                     st.metric(label="Overall Total Sales", value=f"₹ {total_sales:,.2f}")
                 else:
                     st.info("अभी शीट में कोई डेटा नहीं है। एक नया बिल काटें!")
             except Exception as e:
-                st.error(f"डेटा लोड करने में एरर: {e}. क्या SHEET_NAME सही है?")
+                st.error(f"डेटा लोड करने में एरर: {e}")
+
+# --- TAB 3: Inventory (नया टैब) ---
+with tab3:
+    st.header("📦 Inventory Management")
+    st.write("यहाँ आप अपने कैफे के कच्चे माल (Raw Materials) का स्टॉक अपडेट कर सकते हैं।")
+    
+    inv_col1, inv_col2 = st.columns(2)
+    with inv_col1:
+        inv_item = st.text_input("Item Name (जैसे: Buns, Sausages, Coke)")
+    with inv_col2:
+        inv_qty = st.number_input("Quantity (मात्रा)", min_value=1, value=1)
+        
+    inv_action = st.selectbox("Action", ["Stock Added 🟢 (स्टॉक आया)", "Stock Used 🔴 (स्टॉक खत्म/इस्तेमाल हुआ)"])
+    
+    if st.button("Update Inventory", type="primary"):
+        if not inv_item:
+            st.warning("कृपया Item Name भरें!")
+        elif client is None:
+            st.error("गूगल शीट से कनेक्शन नहीं है।")
+        else:
+            try:
+                # Inventory टैब ढूँढना
+                inv_sheet = client.open(SHEET_NAME).worksheet("Inventory")
+                
+                # अगर पन्ना खाली है तो पहली बार में हेडिंग बना देगा
+                if len(inv_sheet.get_all_values()) == 0:
+                    inv_sheet.append_row(["Date", "Time", "Item Name", "Quantity", "Action"])
+                
+                date_str = datetime.now().strftime("%Y-%m-%d")
+                time_str = datetime.now().strftime("%H:%M:%S")
+                
+                row_data = [date_str, time_str, inv_item, inv_qty, inv_action]
+                inv_sheet.append_row(row_data)
+                
+                st.success(f"✅ {inv_item} का स्टॉक सफलतापूर्वक अपडेट हो गया!")
+            except Exception as e:
+                st.error(f"एरर: क्या आपने अपनी गूगल शीट में 'Inventory' नाम का नया पन्ना (Tab) बनाया है? (Error details: {e})")
+                
+    st.markdown("---")
+    if st.button("Load/Refresh Inventory Data"):
+        if client is None:
+             st.error("गूगल शीट से कनेक्शन नहीं है।")
+        else:
+            try:
+                inv_sheet = client.open(SHEET_NAME).worksheet("Inventory")
+                data = inv_sheet.get_all_records()
+                if data:
+                    df = pd.DataFrame(data)
+                    st.dataframe(df, use_container_width=True)
+                else:
+                    st.info("अभी इन्वेंटरी में कोई डेटा नहीं है।")
+            except Exception as e:
+                st.error("एरर: कृपया सुनिश्चित करें कि गूगल शीट में 'Inventory' नाम का पन्ना मौजूद है।")
