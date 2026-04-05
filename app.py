@@ -42,7 +42,42 @@ SHEET_NAME = "NYH_Billing"
 
 st.title("🌭 New York's Hotdog - Billing System")
 
-# --- तीन टैब्स बना दिए गए हैं ---
+# --- कच्चे माल (Raw Materials) की ड्रॉपडाउन लिस्ट ---
+RAW_MATERIALS = [
+    "Hotdog Bun", "Classic Sausage", "Cheese Sausage", "Veg Sausage", 
+    "Paneer/Egg Patty", "Bacon/Pepperoni", "French Fries Portion", 
+    "Chicken Nuggets (Pcs)", "Pizza Pockets (Pcs)", "Cold Drink Cup", "Packaging Box"
+]
+
+# --- ऑटो-माइनस के लिए मेन्यू की 'रेसिपी' ---
+RECIPE_MAP = {
+    "New York's Hotdog (Classic)": {"Hotdog Bun": 1, "Classic Sausage": 1, "Packaging Box": 1},
+    "Cheese Hotdog (Cheese Sausage)": {"Hotdog Bun": 1, "Cheese Sausage": 1, "Packaging Box": 1},
+    "Breakfast Hotdog (Paneer & Egg)": {"Hotdog Bun": 1, "Paneer/Egg Patty": 1, "Packaging Box": 1},
+    "Chicago's Hotdog (Jalapeno/Onion)": {"Hotdog Bun": 1, "Classic Sausage": 1, "Packaging Box": 1},
+    "Bdq Hotdog (Smoky Sauce)": {"Hotdog Bun": 1, "Classic Sausage": 1, "Packaging Box": 1},
+    "Veg Indian Hotdog (Veg Sausage)": {"Hotdog Bun": 1, "Veg Sausage": 1, "Packaging Box": 1},
+    "Chili Hotdog (Chili Sauces)": {"Hotdog Bun": 1, "Classic Sausage": 1, "Packaging Box": 1},
+    "Coney Onion Hotdog (Smoky Sauces)": {"Hotdog Bun": 1, "Classic Sausage": 1, "Packaging Box": 1},
+    "Mexican Street Hotdog (Chicken Bacon)": {"Hotdog Bun": 1, "Bacon/Pepperoni": 1, "Packaging Box": 1},
+    "Loaded Hotdog (Veggies/Pepperoni)": {"Hotdog Bun": 1, "Bacon/Pepperoni": 1, "Packaging Box": 1},
+    "French Fries (Small)": {"French Fries Portion": 1},
+    "French Fries (Medium)": {"French Fries Portion": 2},
+    "French Fries (Large)": {"French Fries Portion": 3},
+    "Chicken Nuggets (6 Pcs)": {"Chicken Nuggets (Pcs)": 6},
+    "Chicken Nuggets (9 Pcs)": {"Chicken Nuggets (Pcs)": 9},
+    "Chicken Nuggets (15 Pcs bucket)": {"Chicken Nuggets (Pcs)": 15},
+    "Pizza Pockets (3 Pcs snack)": {"Pizza Pockets (Pcs)": 3},
+    "Pizza Pockets (5 Pcs party)": {"Pizza Pockets (Pcs)": 5},
+    "Cold Drink (Small)": {"Cold Drink Cup": 1},
+    "Cold Drink (Medium - Option 1)": {"Cold Drink Cup": 1},
+    "Cold Drink (Medium - Option 2)": {"Cold Drink Cup": 1},
+    "Party Pack Beverage": {"Cold Drink Cup": 4},
+    "(1) Small Meal Add-on": {"French Fries Portion": 1, "Cold Drink Cup": 1},
+    "(2) Medium Meal Add-on": {"French Fries Portion": 2, "Cold Drink Cup": 1},
+    "(3) Big Meal Add-on": {"French Fries Portion": 3, "Cold Drink Cup": 1}
+}
+
 tab1, tab2, tab3 = st.tabs(["🧾 New Bill", "📈 Profit & Loss", "📦 Inventory"])
 
 # --- TAB 1: New Bill ---
@@ -59,39 +94,25 @@ with tab1:
     
     st.markdown("---")
     st.subheader("Select Items from Menu")
-
-    menu = {
-        "New York's Hotdog (Classic)": 99,
-        "Cheese Hotdog (Cheese Sausage)": 109,
-        "Breakfast Hotdog (Paneer & Egg)": 109,
-        "Chicago's Hotdog (Jalapeno/Onion)": 119,
-        "Bdq Hotdog (Smoky Sauce)": 129,
-        "Veg Indian Hotdog (Veg Sausage)": 129,
-        "Chili Hotdog (Chili Sauces)": 129,
-        "Coney Onion Hotdog (Smoky Sauces)": 139,
-        "Mexican Street Hotdog (Chicken Bacon)": 149,
-        "Loaded Hotdog (Veggies/Pepperoni)": 159,
-        "French Fries (Small)": 59,
-        "French Fries (Medium)": 79,
-        "French Fries (Large)": 119,
-        "Chicken Nuggets (6 Pcs)": 109,
-        "Chicken Nuggets (9 Pcs)": 149,
-        "Chicken Nuggets (15 Pcs bucket)": 229,
-        "Pizza Pockets (3 Pcs snack)": 89,
-        "Pizza Pockets (5 Pcs party)": 139,
-        "Cold Drink (Small)": 20,
-        "Cold Drink (Medium - Option 1)": 40,
-        "Cold Drink (Medium - Option 2)": 50,
-        "Party Pack Beverage": 70,
-        "(1) Small Meal Add-on": 69,
-        "(2) Medium Meal Add-on": 99,
-        "(3) Big Meal Add-on": 139
-    }
     
-    selected_items = st.multiselect("Pick Items", list(menu.keys()))
+    selected_items = st.multiselect("Pick Items", list(RECIPE_MAP.keys()))
     discount = st.number_input("Discount (₹)", min_value=0, value=0, step=1)
     
-    total_amount = sum([menu[item] for item in selected_items])
+    # मेन्यू के दाम (Calculation के लिए)
+    price_list = {
+        "New York's Hotdog (Classic)": 99, "Cheese Hotdog (Cheese Sausage)": 109,
+        "Breakfast Hotdog (Paneer & Egg)": 109, "Chicago's Hotdog (Jalapeno/Onion)": 119,
+        "Bdq Hotdog (Smoky Sauce)": 129, "Veg Indian Hotdog (Veg Sausage)": 129,
+        "Chili Hotdog (Chili Sauces)": 129, "Coney Onion Hotdog (Smoky Sauces)": 139,
+        "Mexican Street Hotdog (Chicken Bacon)": 149, "Loaded Hotdog (Veggies/Pepperoni)": 159,
+        "French Fries (Small)": 59, "French Fries (Medium)": 79, "French Fries (Large)": 119,
+        "Chicken Nuggets (6 Pcs)": 109, "Chicken Nuggets (9 Pcs)": 149, "Chicken Nuggets (15 Pcs bucket)": 229,
+        "Pizza Pockets (3 Pcs snack)": 89, "Pizza Pockets (5 Pcs party)": 139,
+        "Cold Drink (Small)": 20, "Cold Drink (Medium - Option 1)": 40, "Cold Drink (Medium - Option 2)": 50,
+        "Party Pack Beverage": 70, "(1) Small Meal Add-on": 69, "(2) Medium Meal Add-on": 99, "(3) Big Meal Add-on": 139
+    }
+    
+    total_amount = sum([price_list[item] for item in selected_items])
     final_amount = total_amount - discount
     
     st.markdown("---")
@@ -108,8 +129,8 @@ with tab1:
              st.error("गूगल शीट से कनेक्शन नहीं है।")
         else:
             try:
+                # 1. बिल सेव करना
                 sheet = client.open(SHEET_NAME).sheet1 
-                # अगर शीट खाली है तो हेडिंग डालें
                 if len(sheet.get_all_values()) == 0:
                     sheet.append_row(["Date", "Time", "Customer Name", "Mobile", "Staff", "Items", "Total Amount", "Discount", "Final Amount"])
                 
@@ -122,6 +143,27 @@ with tab1:
                 
                 st.success(f"✅ बिल ₹{final_amount} ग्राहक '{customer_name}' के लिए सफलतापूर्वक सेव हो गया!")
                 st.balloons()
+                
+                # 2. इन्वेंटरी ऑटो-माइनस करना (Auto-Deduct)
+                try:
+                    inv_sheet = client.open(SHEET_NAME).worksheet("Inventory")
+                    if len(inv_sheet.get_all_values()) == 0:
+                        inv_sheet.append_row(["Date", "Time", "Item Name", "Quantity", "Action", "Reference"])
+                    
+                    # इस्तेमाल हुए माल की गिनती
+                    used_materials = {}
+                    for item in selected_items:
+                        for raw_item, qty in RECIPE_MAP[item].items():
+                            used_materials[raw_item] = used_materials.get(raw_item, 0) + qty
+                    
+                    # इन्वेंटरी शीट में लिखना
+                    for raw_item, total_qty in used_materials.items():
+                        inv_row = [date_str, time_str, raw_item, total_qty, "Stock Used 🔴 (Auto)", f"Bill: {customer_name}"]
+                        inv_sheet.append_row(inv_row)
+                        
+                except Exception as e:
+                    st.warning("बिल कट गया, लेकिन इन्वेंटरी ऑटो-अपडेट नहीं हो पाई। 'Inventory' टैब चेक करें।")
+                    
             except Exception as e:
                 st.error(f"गूगल शीट में डेटा सेव करने में एरर: {e}")
 
@@ -148,42 +190,38 @@ with tab2:
             except Exception as e:
                 st.error(f"डेटा लोड करने में एरर: {e}")
 
-# --- TAB 3: Inventory (नया टैब) ---
+# --- TAB 3: Inventory ---
 with tab3:
     st.header("📦 Inventory Management")
-    st.write("यहाँ आप अपने कैफे के कच्चे माल (Raw Materials) का स्टॉक अपडेट कर सकते हैं।")
+    st.write("यहाँ आप अपने कच्चे माल का नया स्टॉक जोड़ सकते हैं। (बिल कटने पर स्टॉक अपने आप माइनस हो जाएगा)")
     
     inv_col1, inv_col2 = st.columns(2)
     with inv_col1:
-        inv_item = st.text_input("Item Name (जैसे: Buns, Sausages, Coke)")
+        # अब टाइप करने की जगह ड्रॉपडाउन लिस्ट
+        inv_item = st.selectbox("Select Item (कच्चा माल चुनें)", RAW_MATERIALS)
     with inv_col2:
         inv_qty = st.number_input("Quantity (मात्रा)", min_value=1, value=1)
         
-    inv_action = st.selectbox("Action", ["Stock Added 🟢 (स्टॉक आया)", "Stock Used 🔴 (स्टॉक खत्म/इस्तेमाल हुआ)"])
+    inv_action = st.selectbox("Action", ["Stock Added 🟢 (नया स्टॉक आया)", "Stock Removed 🔴 (खराब हुआ/हटाया)"])
     
-    if st.button("Update Inventory", type="primary"):
-        if not inv_item:
-            st.warning("कृपया Item Name भरें!")
-        elif client is None:
+    if st.button("Update Inventory Manually", type="primary"):
+        if client is None:
             st.error("गूगल शीट से कनेक्शन नहीं है।")
         else:
             try:
-                # Inventory टैब ढूँढना
                 inv_sheet = client.open(SHEET_NAME).worksheet("Inventory")
-                
-                # अगर पन्ना खाली है तो पहली बार में हेडिंग बना देगा
                 if len(inv_sheet.get_all_values()) == 0:
-                    inv_sheet.append_row(["Date", "Time", "Item Name", "Quantity", "Action"])
+                    inv_sheet.append_row(["Date", "Time", "Item Name", "Quantity", "Action", "Reference"])
                 
                 date_str = datetime.now().strftime("%Y-%m-%d")
                 time_str = datetime.now().strftime("%H:%M:%S")
                 
-                row_data = [date_str, time_str, inv_item, inv_qty, inv_action]
+                row_data = [date_str, time_str, inv_item, inv_qty, inv_action, "Manual Entry"]
                 inv_sheet.append_row(row_data)
                 
-                st.success(f"✅ {inv_item} का स्टॉक सफलतापूर्वक अपडेट हो गया!")
+                st.success(f"✅ {inv_qty} {inv_item} सफलतापूर्वक अपडेट हो गया!")
             except Exception as e:
-                st.error(f"एरर: क्या आपने अपनी गूगल शीट में 'Inventory' नाम का नया पन्ना (Tab) बनाया है? (Error details: {e})")
+                st.error(f"एरर: {e}")
                 
     st.markdown("---")
     if st.button("Load/Refresh Inventory Data"):
@@ -199,4 +237,4 @@ with tab3:
                 else:
                     st.info("अभी इन्वेंटरी में कोई डेटा नहीं है।")
             except Exception as e:
-                st.error("एरर: कृपया सुनिश्चित करें कि गूगल शीट में 'Inventory' नाम का पन्ना मौजूद है।")
+                st.error("एरर: इन्वेंटरी डेटा लोड नहीं हो पाया।")
