@@ -3,12 +3,11 @@ import pandas as pd
 from datetime import datetime
 import gspread
 from google.oauth2.service_account import Credentials
-import textwrap
 
 # --- पेज की सेटिंग ---
 st.set_page_config(page_title="New York's Hotdog", page_icon="🌭", layout="wide")
 
-# --- 1. गूगल शीट से कनेक्शन (अभेद्य तरीका - कोई \n नहीं) ---
+# --- 1. गूगल शीट से कनेक्शन (असली ब्रह्मास्त्र टोटका) ---
 @st.cache_resource
 def init_connection():
     try:
@@ -17,18 +16,43 @@ def init_connection():
             "https://www.googleapis.com/auth/drive"
         ]
         
-        # यह एक सिंगल ब्लॉक है, मोबाइल इसे बिगाड़ नहीं सकता
-        raw_base64 = "MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDGSHdXOKUK30bH3HYUyaFj4ujl5tjZ2mhGuKzNXC/AHw9wNqaYb+Jbdg4GUnMpBNZM33z0Y9rgO/QPN3JYgBEx+UqfZjln9tGmrNPo062e3ci8Zc44rmqSMLNVIWHIfxFzfgExdKNqa7zzT1lprG+l1vzbnpGXHpupzIB/VvExu3cXK7TERIO0xB19KV+DJqSPNBnGOml6q3whmNxXYWsRVVFRk5OuErFwdcjHkHENNDqM5ZmqcUlipQZcyY6RCwnu2jJymhKLIPvdNKcd4HX1X6B3V34H8YEgZF7eDqc7QgEr/+L6R2iwpAwYJ0DkZpobJlIp/TKt1O0D3YVe6rB5AgMBAAECggEALsSDX391EBwrO/NAJ7WKGz73O1ioX7P/4eRnn7Vlbt10P1K7IwBOhzdgHi8gFmLeUzCUntl8fs6HMexcPXd+GlKBFBObHrfJr6/abxZyG2bzfH+QsjCyrHxbnwl7e4ordKz0dgmvjBkvAfEeWQKXnWXpO5g/SGjShi52y8kyxt31xu7/v998eu7FNhdgG8EjfSKyXhNOzyEjMe45p7+4JTrjr9T7MmgWsTgdNZn3Lpoh4Vx6Glx1R84SKnaLHMTE+3GXzZ7xmR6Ev90mHR0eHKaLiNPdw5s/zrbjLZ9kI6a2svyIMEzV4kJZlprUlNZG2L0nlMzcndAkIZZoQ9wPQKBgQDk5vCHNkSjb0K+lf6kmpliXFgZ5mDEtvMD/E5NXwepXiJ0bGjzD2aZm5Ld3EpUJokxLdCgN2UsB85C0Q7Z4HHIq+j8AXEtvUc4QZP1DTOt0DzscK9uNEoAgdy8rgsXSd+f+1VcEALBKfDUtAD+4NYD/eXAKte177lllWsoSdI+5QKBgQDdwZekVijES/x2W0yxCG6SHIRA/j4mkBhQHLU/US/ee3HCoV/1y/IdrfBQ7cTFK20Qb5s6wtq5k4K+9dS8C9wM24DCwwIIbwAEXOfSDxFReQV2UaEogEpyqN/vAX8s1ud2ni075LPJhtWl+P8zCMqMPWenoiqJwLu75rdSewQ+BQKBgD0RD2JDLBSd/iRyR7kKNZl0IVznhTF1zWdmzEz/6T9aCb8dnPIbTbf1NT1TI9FHZppkKqBTpv4UJwbUVy3xHun2UvXIPLWDJZjwhdR+bScVwushNOwlrwhrnMQJepP/9VTs7FzfOJzn34QfcZSNzwrJlZ2q0FmNVtyu/COHbjuxAoGALPgXMkIuni/ykGXPVY8qLQMPZsan/9X0uDo6Hw7tsCZEWX20IforrQ0a0K6G2p0FzvFy/yWIiV16hBMCAug8xXa108kL3n3z+O6GLDjWADmUe/vtvHLXpgzM7IDXM1aZNZq5/Y1RUCrBpJir18OOn4XMQVhHXAvzhhUxU86Se6kCgYBwjpGwnyKWbd2l5V+ClIPqXkcXImoSo6dNuVdFzmo7RJPpbTuZNJ04ZNS7en6Ldc45D98rzci6gmQC8av3ztHhR6LatdVMfWfS+WGemaUWGpSHe97Vmf6A6O0Wd9xmidF70PQKUXPdppLrt4N4pTHlEihXF7HxqsEWO/1qwKs1EA=="
-        
-        # कोड खुद इसे 64 अक्षरों में तोड़ेगा
-        clean_key = "\n".join(textwrap.wrap(raw_base64, 64))
-        perfect_key = f"-----BEGIN PRIVATE KEY-----\n{clean_key}\n-----END PRIVATE KEY-----\n"
+        # यह है कोडिंग का सबसे पक्का तरीका! हर लाइन अलग से लॉक है।
+        my_private_key = (
+            "-----BEGIN PRIVATE KEY-----\n"
+            "MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDGSHdXOKUK30bH\n"
+            "3HYUyaFj4ujl5tjZ2mhGuKzNXC/AHw9wNqaYb+Jbdg4GUnMpBNZM33z0Y9rgO/QP\n"
+            "N3JYgBEx+UqfZjln9tGmrNPo062e3ci8Zc44rmqSMLNVIWHIfxFzfgExdKNqa7zz\n"
+            "T1lprG+l1vzbnpGXHpupzIB/VvExu3cXK7TERIO0xB19KV+DJqSPNBnGOml6q3wh\n"
+            "mNxXYWsRVVFRk5OuErFwdcjHkHENNDqM5ZmqcUlipQZcyY6RCwnu2jJymhKLIPvd\n"
+            "NKcd4HX1X6B3V34H8YEgZF7eDqc7QgEr/+L6R2iwpAwYJ0DkZpobJlIp/TKt1O0D\n"
+            "3YVe6rB5AgMBAAECggEALsSDX391EBwrO/NAJ7WKGz73O1ioX7P/4eRnn7Vlbt10\n"
+            "P1K7IwBOhzdgHi8gFmLeUzCUntl8fs6HMexcPXd+GlKBFBObHrfJr6/abxZyG2b\n"
+            "zfH+QsjCyrHxbnwl7e4ordKz0dgmvjBkvAfEeWQKXnWXpO5g/SGjShi52y8kyxt3\n"
+            "1xu7/v998eu7FNhdgG8EjfSKyXhNOzyEjMe45p7+4JTrjr9T7MmgWsTgdNZn3Lpo\n"
+            "h4Vx6Glx1R84SKnaLHMTE+3GXzZ7xmR6Ev90mHR0eHKaLiNPdw5s/zrbjLZ9kI6a\n"
+            "2svyIMEzV4kJZlprUlNZG2L0nlMzcndAkIZZoQ9wPQKBgQDk5vCHNkSjb0K+lf6k\n"
+            "mpliXFgZ5mDEtvMD/E5NXwepXiJ0bGjzD2aZm5Ld3EpUJokxLdCgN2UsB85C0Q7Z\n"
+            "4HHIq+j8AXEtvUc4QZP1DTOt0DzscK9uNEoAgdy8rgsXSd+f+1VcEALBKfDUtAD+\n"
+            "4NYD/eXAKte177lllWsoSdI+5QKBgQDdwZekVijES/x2W0yxCG6SHIRA/j4mkBhQ\n"
+            "HLU/US/ee3HCoV/1y/IdrfBQ7cTFK20Qb5s6wtq5k4K+9dS8C9wM24DCwwIIbwAE\n"
+            "XOfSDxFReQV2UaEogEpyqN/vAX8s1ud2ni075LPJhtWl+P8zCMqMPWenoiqJwLu7\n"
+            "5rdSewQ+BQKBgD0RD2JDLBSd/iRyR7kKNZl0IVznhTF1zWdmzEz/6T9aCb8dnPIb\n"
+            "Tbf1NT1TI9FHZppkKqBTpv4UJwbUVy3xHun2UvXIPLWDJZjwhdR+bScVwushNOwl\n"
+            "rwhrnMQJepP/9VTs7FzfOJzn34QfcZSNzwrJlZ2q0FmNVtyu/COHbjuxAoGALPgX\n"
+            "MkIuni/ykGXPVY8qLQMPZsan/9X0uDo6Hw7tsCZEWX20IforrQ0a0K6G2p0FzvFy\n"
+            "/yWIiV16hBMCAug8xXa108kL3n3z+O6GLDjWADmUe/vtvHLXpgzM7IDXM1aZNZq5\n"
+            "/Y1RUCrBpJir18OOn4XMQVhHXAvzhhUxU86Se6kCgYBwjpGwnyKWbd2l5V+ClIPq\n"
+            "XkcXImoSo6dNuVdFzmo7RJPpbTuZNJ04ZNS7en6Ldc45D98rzci6gmQC8av3ztHh\n"
+            "R6LatdVMfWfS+WGemaUWGpSHe97Vmf6A6O0Wd9xmidF70PQKUXPdppLrt4N4pTHl\n"
+            "EihXF7HxqsEWO/1qwKs1EA==\n"
+            "-----END PRIVATE KEY-----\n"
+        )
         
         credentials_dict = {
           "type": "service_account",
           "project_id": "hotdog-billing-492413",
           "private_key_id": "ba0b5204f4a3b792371528594bea6feed35c083a",
-          "private_key": perfect_key,
+          "private_key": my_private_key,
           "client_email": "hotdog-app@hotdog-billing-492413.iam.gserviceaccount.com",
           "client_id": "101024134007123863664",
           "auth_uri": "https://accounts.google.com/o/oauth2/auth",
