@@ -4,101 +4,149 @@ from datetime import datetime
 import gspread
 from google.oauth2.service_account import Credentials
 
+# --- पेज की सेटिंग ---
+st.set_page_config(page_title="New York's Hotdog", page_icon="🌭", layout="wide")
+
 # --- 1. गूगल शीट से कनेक्शन ---
-def connect_to_sheet():
+@st.cache_resource
+def init_connection():
     try:
-        scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-        # Streamlit Secrets से चाबी उठाना
-        creds_info = st.secrets["gcp_service_account"]
-        creds = Credentials.from_service_account_info(creds_info, scopes=scope)
-        client = gspread.authorize(creds)
-        # आपकी सही शीट आईडी
-        sheet = client.open_by_key("1b2uu70b8y-cDX8FVDI0JbQzrV7LYDUXwVtN09vACJmw").sheet1
-        return sheet
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets", 
+            "https://www.googleapis.com/auth/drive"
+        ]
+        creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scopes)
+        return gspread.authorize(creds)
     except Exception as e:
-        st.error(f"Sheet Connection Error: {e}")
+        st.error(f"प्रमाणीकरण (Authentication) एरर: {e}. कृपया Secrets चेक करें।")
         return None
 
-# --- 2. इन्वेंटरी और मेन्यू सेटअप ---
-if 'inventory' not in st.session_state:
-    st.session_state.inventory = {
-        "Hotdog Buns": 100, "Normal Sausages": 50, "Veg Sausages": 30,
-        "Cheese Sausages": 20, "Chicken Sausages": 40, "Fries (kg)": 10.0,
-        "Chicken Nuggets (Pcs)": 200, "Pizza Pockets (Pcs)": 100,
-        "Coke Syrup (Liters)": 5.0, "Sauces/Toppings (Units)": 200
+client = init_connection()
+
+# ध्यान दें: "NYH_Billing" की जगह अपनी गूगल शीट का असली नाम लिखें
+SHEET_NAME = "NYH_Billing" 
+
+st.title("🌭 New York's Hotdog - Billing System")
+
+# --- टैब्स बनाना ---
+tab1, tab2 = st.tabs(["🧾 New Bill", "📈 Profit & Loss"])
+
+# --- TAB 1: New Bill ---
+with tab1:
+    st.header("🧾 Create New Bill")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        customer_name = st.text_input("Customer Name")
+        mobile_number = st.text_input("Mobile Number (10 Digits)")
+    with col2:
+        staff = st.selectbox("Staff/Cashier", ["Manager", "Staff 1", "Staff 2"])
+        date_of_bill = st.date_input("Date", datetime.now())
+    
+    st.markdown("---")
+    st.subheader("Select Items from Menu")
+
+    # --- आपका असली मेन्यू (मेन्यू कार्ड फोटो के अनुसार) ---
+    menu = {
+        # --- HOTDOGS --- (image_15.png)
+        "New York's Hotdog (Classic)": 99,
+        "Cheese Hotdog (Cheese Sausage)": 109,
+        "Breakfast Hotdog (Paneer & Egg)": 109,
+        "Chicago's Hotdog (Jalapeno/Onion)": 119,
+        "Bdq Hotdog (Smoky Sauce)": 129,
+        "Veg Indian Hotdog (Veg Sausage)": 129,
+        "Chili Hotdog (Chili Sauces)": 129,
+        "Coney Onion Hotdog (Smoky Sauces)": 139,
+        "Mexican Street Hotdog (Chicken Bacon)": 149,
+        "Loaded Hotdog (Veggies/Pepperoni)": 159,
+        # --- SIDES & NUGGETS --- (image_16.png)
+        "French Fries (Small)": 59,
+        "French Fries (Medium)": 79,
+        "French Fries (Large)": 119,
+        "Chicken Nuggets (6 Pcs)": 109,
+        "Chicken Nuggets (9 Pcs)": 149,
+        "Chicken Nuggets (15 Pcs bucket)": 229,
+        "Pizza Pockets (3 Pcs snack)": 89,
+        "Pizza Pockets (5 Pcs party)": 139,
+        # --- BEVERAGES & MEALS --- (image_16.png)
+        "Cold Drink (Small)": 20,
+        "Cold Drink (Medium - Option 1)": 40,
+        "Cold Drink (Medium - Option 2)": 50,
+        "Party Pack Beverage": 70,
+        "(1) Small Meal Add-on": 69,
+        "(2) Medium Meal Add-on": 99,
+        "(3) Big Meal Add-on": 139
     }
-
-MENU_DATABASE = {
-    "New York's Hotdog": [99, 45, {"Normal Sausages": 1, "Hotdog Buns": 1}],
-    "Cheese Hotdog": [109, 50, {"Cheese Sausages": 1, "Hotdog Buns": 1}],
-    "Breakfast Hotdog": [109, 50, {"Normal Sausages": 1, "Hotdog Buns": 1}],
-    "Chicago's Hotdog": [119, 55, {"Normal Sausages": 1, "Hotdog Buns": 1}],
-    "BBQ Hotdog": [129, 60, {"Normal Sausages": 1, "Hotdog Buns": 1}],
-    "Veg Indian Hotdog": [129, 60, {"Veg Sausages": 1, "Hotdog Buns": 1}],
-    "Chili Hotdog": [129, 60, {"Normal Sausages": 1, "Hotdog Buns": 1}],
-    "Coney Onion Hotdog": [139, 65, {"Normal Sausages": 1, "Hotdog Buns": 1}],
-    "Mexican Street Hotdog": [149, 70, {"Chicken Sausages": 1, "Hotdog Buns": 1}],
-    "Loaded Hotdog": [159, 75, {"Normal Sausages": 1, "Hotdog Buns": 1}],
-    "Small Fries": [59, 20, {"Fries (kg)": 0.1}],
-    "Medium Fries": [79, 30, {"Fries (kg)": 0.15}],
-    "Large Fries": [119, 45, {"Fries (kg)": 0.2}],
-    "Chicken Nuggets (6 Pcs)": [109, 50, {"Chicken Nuggets (Pcs)": 6}],
-    "Chicken Nuggets (9 Pcs)": [149, 70, {"Chicken Nuggets (Pcs)": 9}],
-    "Chicken Nuggets Bucket (15 Pcs)": [229, 110, {"Chicken Nuggets (Pcs)": 15}],
-    "Pizza Pockets (3 Pcs)": [89, 40, {"Pizza Pockets (Pcs)": 3}],
-    "Pizza Pockets (5 Pcs)": [139, 65, {"Pizza Pockets (Pcs)": 5}],
-    "Cold Drink (Small)": [20, 10, {"Coke Syrup (Liters)": 0.03}],
-    "Cold Drink (Medium)": [40, 15, {"Coke Syrup (Liters)": 0.05}],
-    "Cold Drink (Large)": [50, 20, {"Coke Syrup (Liters)": 0.08}], 
-    "Party Pack": [70, 30, {"Coke Syrup (Liters)": 0.15}],
-    "Small Meal (Add-on)": [69, 30, {"Fries (kg)": 0.1, "Coke Syrup (Liters)": 0.03}],
-    "Medium Meal (Add-on)": [99, 45, {"Fries (kg)": 0.15, "Coke Syrup (Liters)": 0.05}],
-    "Big Meal (Add-on)": [139, 65, {"Fries (kg)": 0.2, "Coke Syrup (Liters)": 0.08}]
-}
-
-st.title("🌭 NY Hotdog - Billing System")
-
-# --- 3. बिलिंग इंटरफ़ेस ---
-st.header("🧾 New Bill")
-col1, col2 = st.columns(2)
-with col1:
-    cust_name = st.text_input("Customer Name", "Guest")
-with col2:
-    staff_name = st.selectbox("Staff", ["Manager", "Staff 1", "Staff 2"])
-
-selected_items = st.multiselect("Select Items", list(MENU_DATABASE.keys()))
-discount = st.number_input("Discount (₹)", min_value=0, value=0)
-
-if st.button("Complete Transaction"):
-    if selected_items:
-        total_amount = sum(MENU_DATABASE[i][0] for i in selected_items)
-        total_cost = sum(MENU_DATABASE[i][1] for i in selected_items)
-        grand_total = total_amount - discount
-        profit = grand_total - total_cost
-        curr_time = datetime.now().strftime("%Y-%m-%d %H:%M")
-
-        # स्टॉक कम करना
-        for item in selected_items:
-            reqs = MENU_DATABASE[item][2]
-            for ingredient, qty in reqs.items():
-                st.session_state.inventory[ingredient] -= qty
-
-        # गूगल शीट में डेटा भेजना
-        sheet = connect_to_sheet()
-        if sheet:
-            sheet.append_row([curr_time, staff_name, cust_name, ", ".join(selected_items), grand_total, profit])
-            st.success(f"✅ Bill Saved to Google Sheet! Total: ₹{grand_total}")
+    
+    # मेन्यू को कैटेगरी के अनुसार दिखाने के लिए multiselect
+    selected_items = st.multiselect("Pick Items", list(menu.keys()))
+    
+    discount = st.number_input("Discount (₹)", min_value=0, value=0, step=1)
+    
+    # कैलकुलेशन
+    total_amount = sum([menu[item] for item in selected_items])
+    final_amount = total_amount - discount
+    
+    st.markdown("---")
+    if total_amount > 0:
+        st.metric(label="Total Amount", value=f"₹ {total_amount}")
+        st.metric(label="Final Amount (After Discount)", value=f"₹ {final_amount}")
+    
+    if st.button("Complete & Save Transaction", type="primary"):
+        if not customer_name:
+            st.warning("कृपया Customer Name भरें!")
+        elif not mobile_number:
+            st.warning("कृपया Mobile Number भरें!")
+        elif not selected_items:
+            st.warning("कृपया कम से कम 1 Item चुनें!")
+        elif client is None:
+             st.error("गूगल शीट से कनेक्शन नहीं है। कृपया Secrets चेक करें।")
         else:
-            st.warning("⚠️ Data saved locally but failed to reach Google Sheet. Check Secrets!")
+            try:
+                # शीट खोलें
+                sheet = client.open(SHEET_NAME).sheet1 
+                
+                # समय और तारीख
+                time_str = datetime.now().strftime("%H:%M:%S")
+                date_str = date_of_bill.strftime("%Y-%m-%d")
+                
+                # आइटम को एक लाइन में जोड़ना
+                items_str = ", ".join(selected_items)
+                
+                # डेटा को शीट में भेजना (नया क्रम: Mobile Number के साथ)
+                # क्रम: तारीख, समय, ग्राहक का नाम, मोबाइल नंबर, स्टाफ, आइटम्स, टोटल, डिस्काउंट, फाइनल
+                row_data = [date_str, time_str, customer_name, mobile_number, staff, items_str, total_amount, discount, final_amount]
+                sheet.append_row(row_data)
+                
+                st.success(f"✅ बिल ₹{final_amount} ग्राहक '{customer_name}' के लिए सफलतापूर्वक सेव हो गया!")
+                # फॉर्म साफ़ करने के लिए (Streamlit automatic refresh)
+                st.balloons()
+            except Exception as e:
+                st.error(f"गूगल शीट में डेटा सेव करने में एरर: {e}")
 
-# --- 4. इन्वेंटरी और रिपोर्ट ---
-st.markdown("---")
-st.header("📦 Inventory Status")
-st.table(pd.DataFrame(st.session_state.inventory.items(), columns=["Item", "Stock Remaining"]))
-
-if st.button("Refresh Sales Report"):
-    sheet = connect_to_sheet()
-    if sheet:
-        data = sheet.get_all_records()
-        if data:
-            st.dataframe(pd.DataFrame(data))
+# --- TAB 2: Profit & Loss ---
+with tab2:
+    st.header("📈 Profit & Loss / Sales Dashboard")
+    st.write("यहाँ आप अपने कैफे की पूरी सेल का डेटा देख सकते हैं।")
+    
+    if st.button("Load/Refresh Sales Data"):
+        if client is None:
+             st.error("गूगल शीट से कनेक्शन नहीं है।")
+        else:
+            try:
+                sheet = client.open(SHEET_NAME).sheet1
+                data = sheet.get_all_records()
+                
+                if data:
+                    df = pd.DataFrame(data)
+                    # डेटा दिखाना
+                    st.dataframe(df, use_container_width=True)
+                    
+                    # 'Final Amount' (आखरी कॉलम) का टोटल निकालना
+                    # ध्यान दें: अगर आपकी शीट में हेडर अलग है तो इसे बदलें, वरना यह आखरी कॉलम का टोटल करेगा।
+                    total_sales = df.iloc[:, -1].sum() 
+                    st.metric(label="Overall Total Sales", value=f"₹ {total_sales:,.2f}")
+                else:
+                    st.info("अभी शीट में कोई डेटा नहीं है। एक नया बिल काटें!")
+            except Exception as e:
+                st.error(f"डेटा लोड करने में एरर: {e}. क्या SHEET_NAME सही है?")
