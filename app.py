@@ -3,11 +3,12 @@ import pandas as pd
 from datetime import datetime
 import gspread
 from google.oauth2.service_account import Credentials
+import json
 
 # --- पेज की सेटिंग ---
 st.set_page_config(page_title="New York's Hotdog", page_icon="🌭", layout="wide")
 
-# --- 1. गूगल शीट से कनेक्शन (अभेद्य लाइन-बाय-लाइन लॉक) ---
+# --- 1. गूगल शीट से कनेक्शन (सीधा फाइल से - सबसे सुरक्षित तरीका) ---
 @st.cache_resource
 def init_connection():
     try:
@@ -16,56 +17,17 @@ def init_connection():
             "https://www.googleapis.com/auth/drive"
         ]
         
-        # यह है मोबाइल के \n एरर को मात देने का सबसे पक्का तरीका
-        my_private_key = (
-            "-----BEGIN PRIVATE KEY-----\n"
-            "MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDJeuWd17ZaG27/\n"
-            "PSIqojgr9mBznbkZP9CzHN56A762LaJAZ0jdNJEBRFi16A2ByzkB0psrYNWVfm2/\n"
-            "fXhqONwk+57gFJSVCouGs5S8w7Lo0Qg4KEwPaM2bdrao2MAWju86Hte4VA9ozGEd\n"
-            "JJzid+jZMsqeJ37j0aBDm+3c4945BCZbd7NET8YmZN1cPSlRHepToIrTf/b9g+Ey\n"
-            "UiGtEawLwo+5wFriftBAFIYHoV9cdb8K6vy8bvvWBpwcmxprCTZsab0UdvjHK6oL\n"
-            "nawHJ9064phF61H4PZs9z0hX7T1GRLVFnlCwKFwmBzK7dIlfLB8qyNlIUVputN3K\n"
-            "vYNevoWtAgMBAAECggEAIxkCE+eGcBb0VIk5QPUGVP4z2iAhJPldaT4/sUCiwcic\n"
-            "SZzUcBhepDpcO8ADTldxBFTETB+vxT2Db8azKcni65xblkxvf7EZEiuJXwK2UWFM\n"
-            "jb/TVCHdI1ZgRnSPrb5ThSvnR0h5cLeduT5uB/N8gA2dh0R5EcWsJertWjvls8eq\n"
-            "ninQJ1TMsxc9yoj3PKadLt2rUdrEDod5lQk6UrHGStdecENprkzo/HDpXZXq+CYL\n"
-            "H9Nob0nqG4sL8Ql7iZoUzrGsnLQ0O9aEAPQxZFkrewhhXZP0oA/X3N9F3alYwmm0\n"
-            "nnN7IxkxUtH5lAQnMATqSm724fyEwQe8scX68thiQQKBgQDqibWMGdMFa63HMvKl\n"
-            "9zyDl9ZAdj0AXpVk2nnLccCZ04e5GkmovO4E6iNY7DB0CiNGwmh4yY6SGHjcEmOM\n"
-            "bTGR8B706WTP5B8pHWJ11O2eeeqamPxdkh+HOGVI+LkXCf5WkHLyxX/G2Q0UBfsL\n"
-            "ir55STlC8SCNt9qOVr8O2j34YQKBgQDb6sYJURoZYkQq9tq8c00ShZhwP6NR5qoL\n"
-            "z0RD5BBeMEEtkVntc934XaWc2w5sBVSD+AqtarwOLJ1hOw64LgoWLbsse7upaEYI\n"
-            "/4m4cXjd+tYOEXOb0FEYAfrtfY+ENREDF5ttYECM3n0k0c09SmLD+iGrpOnP5bfu\n"
-            "CH2rwyKgzQKBgQDW7ErJkACoPvyIRk/FdsKldEaJ29AavpH4UZy6qgrs68K8BTLq\n"
-            "xfb32fd6TTY5n/CjrxM9XLahenuGb/N5g7ahHYHAvP/84fcMHjlT8UOurdomwXrB\n"
-            "5F2v9CYcsJAsZKQFf2lWv1VQSyaI6tIayZGyYz9t8Lj8JTbKqQN8ANI5AQKBgQCm\n"
-            "qPs/oEjJJ+FFNiJ6Yl7sRHZLys54iPghTwgK81E8MBGU+OxPuVlkmYOipZf+YOO1\n"
-            "x0pANf0iOMlkIB99kNZwDGQmx/Zl4fIBa7bxIn1YrHl/29XjJTHvocCKLneO17B2\n"
-            "yXMupp0EpK/uMVj6s965alwN+kJ/HTYQnDqw6obZmQKBgQDj8cehbi+g6oFD8Dbj\n"
-            "UNS+Oz+CrXxPha7baPYmvA7r1q5sg7J5xslSdAyEHimnVi3j0/0h4tSPYyN91x30\n"
-            "d1o+hinqiz1Cqzx1BVSE4XXnJE4vzrbC7o8eOJfeWrJnxgdL1ZaSIZhEzMpG8Ffo\n"
-            "1VQOZkZi93FUcJr9RZNpZk3Lbg==\n"
-            "-----END PRIVATE KEY-----\n"
-        )
+        # आपकी अपलोड की हुई फाइल का पूरा नाम
+        key_file = "hotdog-billing-492413-417ab2c8f943.txt"
         
-        credentials_dict = {
-          "type": "service_account",
-          "project_id": "hotdog-billing-492413",
-          "private_key_id": "417ab2c8f943b22966b94bc7d64472a7bd9603d3",
-          "private_key": my_private_key,
-          "client_email": "hotdog-app-new@hotdog-billing-492413.iam.gserviceaccount.com",
-          "client_id": "107807598057562047821",
-          "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-          "token_uri": "https://oauth2.googleapis.com/token",
-          "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-          "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/hotdog-app-new%40hotdog-billing-492413.iam.gserviceaccount.com",
-          "universe_domain": "googleapis.com"
-        }
-        
+        # फाइल को पढ़ना
+        with open(key_file) as f:
+            credentials_dict = json.load(f)
+            
         creds = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
         return gspread.authorize(creds)
     except Exception as e:
-        st.error(f"एरर: {e}")
+        st.error(f"कनेक्शन एरर: {e}")
         return None
 
 client = init_connection()
@@ -112,7 +74,6 @@ tab1, tab2, tab3 = st.tabs(["🧾 New Bill", "📈 Profit & Loss", "📦 Invento
 
 with tab1:
     st.header("🧾 Create New Bill")
-    
     col1, col2 = st.columns(2)
     with col1:
         customer_name = st.text_input("Customer Name")
@@ -120,9 +81,6 @@ with tab1:
     with col2:
         staff = st.selectbox("Staff/Cashier", ["Manager", "Staff 1", "Staff 2"])
         date_of_bill = st.date_input("Date", datetime.now())
-    
-    st.markdown("---")
-    st.subheader("Select Items from Menu")
     
     selected_items = st.multiselect("Pick Items", list(RECIPE_MAP.keys()))
     discount = st.number_input("Discount (₹)", min_value=0, value=0, step=1)
@@ -143,18 +101,17 @@ with tab1:
     total_amount = sum([price_list[item] for item in selected_items])
     final_amount = total_amount - discount
     
-    st.markdown("---")
     if total_amount > 0:
         st.metric(label="Total Amount", value=f"₹ {total_amount}")
-        st.metric(label="Final Amount (After Discount)", value=f"₹ {final_amount}")
+        st.metric(label="Final Amount", value=f"₹ {final_amount}")
     
     if st.button("Complete & Save Transaction", type="primary"):
         if not customer_name:
-            st.warning("कृपया Customer Name भरें!")
+            st.warning("Customer Name भरें!")
         elif not selected_items:
-            st.warning("कृपया कम से कम 1 Item चुनें!")
+            st.warning("Items चुनें!")
         elif client is None:
-             st.error("गूगल शीट से कनेक्शन नहीं है।")
+             st.error("Sheet Connection Error!")
         else:
             try:
                 sheet = client.open(SHEET_NAME).sheet1 
@@ -168,9 +125,10 @@ with tab1:
                 row_data = [date_str, time_str, customer_name, mobile_number, staff, items_str, total_amount, discount, final_amount]
                 sheet.append_row(row_data)
                 
-                st.success(f"✅ बिल ₹{final_amount} ग्राहक '{customer_name}' के लिए सफलतापूर्वक सेव हो गया!")
+                st.success("✅ बिल सेव हो गया!")
                 st.balloons()
                 
+                # Inventory Auto-Deduct
                 try:
                     inv_sheet = client.open(SHEET_NAME).worksheet("Inventory")
                     if len(inv_sheet.get_all_values()) == 0:
@@ -182,76 +140,34 @@ with tab1:
                             used_materials[raw_item] = used_materials.get(raw_item, 0) + qty
                     
                     for raw_item, total_qty in used_materials.items():
-                        inv_row = [date_str, time_str, raw_item, total_qty, "Stock Used 🔴 (Auto)", f"Bill: {customer_name}"]
-                        inv_sheet.append_row(inv_row)
-                        
-                except Exception as e:
-                    st.warning("बिल कट गया, लेकिन इन्वेंटरी अपडेट नहीं हुई।")
-                    
+                        inv_sheet.append_row([date_str, time_str, raw_item, total_qty, "Stock Used 🔴 (Auto)", f"Bill: {customer_name}"])
+                except:
+                    st.warning("Inventory update failed.")
             except Exception as e:
-                st.error(f"गूगल शीट में डेटा सेव करने में एरर: {e}")
+                st.error(f"Error: {e}")
 
 with tab2:
-    st.header("📈 Profit & Loss / Sales Dashboard")
-    
-    if st.button("Load/Refresh Sales Data"):
-        if client is None:
-             st.error("गूगल शीट से कनेक्शन नहीं है।")
-        else:
-            try:
-                sheet = client.open(SHEET_NAME).sheet1
-                data = sheet.get_all_records()
-                if data:
-                    df = pd.DataFrame(data)
-                    st.dataframe(df, use_container_width=True)
-                    total_sales = df["Final Amount"].sum() if "Final Amount" in df.columns else df.iloc[:, -1].sum()
-                    st.metric(label="Overall Total Sales", value=f"₹ {total_sales:,.2f}")
-                else:
-                    st.info("अभी कोई डेटा नहीं है।")
-            except Exception as e:
-                st.error(f"एरर: {e}")
+    st.header("📈 Sales Dashboard")
+    if st.button("Load Data"):
+        try:
+            sheet = client.open(SHEET_NAME).sheet1
+            df = pd.DataFrame(sheet.get_all_records())
+            st.dataframe(df, use_container_width=True)
+            total = df["Final Amount"].sum()
+            st.metric("Total Sales", f"₹ {total:,.2f}")
+        except Exception as e:
+            st.error(f"Error: {e}")
 
 with tab3:
     st.header("📦 Inventory Management")
-    
-    inv_col1, inv_col2 = st.columns(2)
-    with inv_col1:
-        inv_item = st.selectbox("Select Item (कच्चा माल)", RAW_MATERIALS)
-    with inv_col2:
-        inv_qty = st.number_input("Quantity (मात्रा)", min_value=1, value=1)
-        
+    inv_item = st.selectbox("Select Item", RAW_MATERIALS)
+    inv_qty = st.number_input("Quantity", min_value=1, value=1)
     inv_action = st.selectbox("Action", ["Stock Added 🟢", "Stock Removed 🔴"])
     
-    if st.button("Update Inventory Manually", type="primary"):
-        if client is None:
-            st.error("गूगल शीट से कनेक्शन नहीं है।")
-        else:
-            try:
-                inv_sheet = client.open(SHEET_NAME).worksheet("Inventory")
-                if len(inv_sheet.get_all_values()) == 0:
-                    inv_sheet.append_row(["Date", "Time", "Item Name", "Quantity", "Action", "Reference"])
-                
-                date_str = datetime.now().strftime("%Y-%m-%d")
-                time_str = datetime.now().strftime("%H:%M:%S")
-                row_data = [date_str, time_str, inv_item, inv_qty, inv_action, "Manual Entry"]
-                inv_sheet.append_row(row_data)
-                
-                st.success(f"✅ अपडेट हो गया!")
-            except Exception as e:
-                st.error(f"एरर: {e}")
-                
-    st.markdown("---")
-    if st.button("Load/Refresh Inventory"):
-        if client is None:
-             st.error("गूगल शीट से कनेक्शन नहीं है।")
-        else:
-            try:
-                inv_sheet = client.open(SHEET_NAME).worksheet("Inventory")
-                data = inv_sheet.get_all_records()
-                if data:
-                    df = pd.DataFrame(data)
-                    st.dataframe(df, use_container_width=True)
-                else:
-                    st.info("इन्वेंटरी खाली है।")
-            except Exception as e:
-                st.error("एरर: इन्वेंटरी लोड नहीं हुई।")
+    if st.button("Update Manually"):
+        try:
+            inv_sheet = client.open(SHEET_NAME).worksheet("Inventory")
+            inv_sheet.append_row([datetime.now().strftime("%Y-%m-%d"), datetime.now().strftime("%H:%M:%S"), inv_item, inv_qty, inv_action, "Manual"])
+            st.success("Updated!")
+        except Exception as e:
+            st.error(f"Error: {e}")
