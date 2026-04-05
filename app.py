@@ -7,7 +7,7 @@ from google.oauth2.service_account import Credentials
 # --- पेज की सेटिंग ---
 st.set_page_config(page_title="New York's Hotdog", page_icon="🌭", layout="wide")
 
-# --- 1. गूगल शीट से कनेक्शन (Direct JSON - 100% Working) ---
+# --- 1. गूगल शीट से कनेक्शन (अभेद्य लाइन-बाय-लाइन लॉक) ---
 @st.cache_resource
 def init_connection():
     try:
@@ -16,11 +16,43 @@ def init_connection():
             "https://www.googleapis.com/auth/drive"
         ]
         
+        # यह है मोबाइल के \n एरर को मात देने का सबसे पक्का तरीका
+        my_private_key = (
+            "-----BEGIN PRIVATE KEY-----\n"
+            "MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDJeuWd17ZaG27/\n"
+            "PSIqojgr9mBznbkZP9CzHN56A762LaJAZ0jdNJEBRFi16A2ByzkB0psrYNWVfm2/\n"
+            "fXhqONwk+57gFJSVCouGs5S8w7Lo0Qg4KEwPaM2bdrao2MAWju86Hte4VA9ozGEd\n"
+            "JJzid+jZMsqeJ37j0aBDm+3c4945BCZbd7NET8YmZN1cPSlRHepToIrTf/b9g+Ey\n"
+            "UiGtEawLwo+5wFriftBAFIYHoV9cdb8K6vy8bvvWBpwcmxprCTZsab0UdvjHK6oL\n"
+            "nawHJ9064phF61H4PZs9z0hX7T1GRLVFnlCwKFwmBzK7dIlfLB8qyNlIUVputN3K\n"
+            "vYNevoWtAgMBAAECggEAIxkCE+eGcBb0VIk5QPUGVP4z2iAhJPldaT4/sUCiwcic\n"
+            "SZzUcBhepDpcO8ADTldxBFTETB+vxT2Db8azKcni65xblkxvf7EZEiuJXwK2UWFM\n"
+            "jb/TVCHdI1ZgRnSPrb5ThSvnR0h5cLeduT5uB/N8gA2dh0R5EcWsJertWjvls8eq\n"
+            "ninQJ1TMsxc9yoj3PKadLt2rUdrEDod5lQk6UrHGStdecENprkzo/HDpXZXq+CYL\n"
+            "H9Nob0nqG4sL8Ql7iZoUzrGsnLQ0O9aEAPQxZFkrewhhXZP0oA/X3N9F3alYwmm0\n"
+            "nnN7IxkxUtH5lAQnMATqSm724fyEwQe8scX68thiQQKBgQDqibWMGdMFa63HMvKl\n"
+            "9zyDl9ZAdj0AXpVk2nnLccCZ04e5GkmovO4E6iNY7DB0CiNGwmh4yY6SGHjcEmOM\n"
+            "bTGR8B706WTP5B8pHWJ11O2eeeqamPxdkh+HOGVI+LkXCf5WkHLyxX/G2Q0UBfsL\n"
+            "ir55STlC8SCNt9qOVr8O2j34YQKBgQDb6sYJURoZYkQq9tq8c00ShZhwP6NR5qoL\n"
+            "z0RD5BBeMEEtkVntc934XaWc2w5sBVSD+AqtarwOLJ1hOw64LgoWLbsse7upaEYI\n"
+            "/4m4cXjd+tYOEXOb0FEYAfrtfY+ENREDF5ttYECM3n0k0c09SmLD+iGrpOnP5bfu\n"
+            "CH2rwyKgzQKBgQDW7ErJkACoPvyIRk/FdsKldEaJ29AavpH4UZy6qgrs68K8BTLq\n"
+            "xfb32fd6TTY5n/CjrxM9XLahenuGb/N5g7ahHYHAvP/84fcMHjlT8UOurdomwXrB\n"
+            "5F2v9CYcsJAsZKQFf2lWv1VQSyaI6tIayZGyYz9t8Lj8JTbKqQN8ANI5AQKBgQCm\n"
+            "qPs/oEjJJ+FFNiJ6Yl7sRHZLys54iPghTwgK81E8MBGU+OxPuVlkmYOipZf+YOO1\n"
+            "x0pANf0iOMlkIB99kNZwDGQmx/Zl4fIBa7bxIn1YrHl/29XjJTHvocCKLneO17B2\n"
+            "yXMupp0EpK/uMVj6s965alwN+kJ/HTYQnDqw6obZmQKBgQDj8cehbi+g6oFD8Dbj\n"
+            "UNS+Oz+CrXxPha7baPYmvA7r1q5sg7J5xslSdAyEHimnVi3j0/0h4tSPYyN91x30\n"
+            "d1o+hinqiz1Cqzx1BVSE4XXnJE4vzrbC7o8eOJfeWrJnxgdL1ZaSIZhEzMpG8Ffo\n"
+            "1VQOZkZi93FUcJr9RZNpZk3Lbg==\n"
+            "-----END PRIVATE KEY-----\n"
+        )
+        
         credentials_dict = {
           "type": "service_account",
           "project_id": "hotdog-billing-492413",
           "private_key_id": "417ab2c8f943b22966b94bc7d64472a7bd9603d3",
-          "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDJeuWd17ZaG27/\nPSIqojgr9mBznbkZP9CzHN56A762LaJAZ0jdNJEBRFi16A2ByzkB0psrYNWVfm2/\nfXhqONwk+57gFJSVCouGs5S8w7Lo0Qg4KEwPaM2bdrao2MAWju86Hte4VA9ozGEd\nJJzid+jZMsqeJ37j0aBDm+3c4945BCZbd7NET8YmZN1cPSlRHepToIrTf/b9g+Ey\nUiGtEawLwo+5wFriftBAFIYHoV9cdb8K6vy8bvvWBpwcmxprCTZsab0UdvjHK6oL\nnawHJ9064phF61H4PZs9z0hX7T1GRLVFnlCwKFwmBzK7dIlfLB8qyNlIUVputN3K\nvYNevoWtAgMBAAECggEAIxkCE+eGcBb0VIk5QPUGVP4z2iAhJPldaT4/sUCiwcic\nSZzUcBhepDpcO8ADTldxBFTETB+vxT2Db8azKcni65xblkxvf7EZEiuJXwK2UWFM\njb/TVCHdI1ZgRnSPrb5ThSvnR0h5cLeduT5uB/N8gA2dh0R5EcWsJertWjvls8eq\nninQJ1TMsxc9yoj3PKadLt2rUdrEDod5lQk6UrHGStdecENprkzo/HDpXZXq+CYL\nH9Nob0nqG4sL8Ql7iZoUzrGsnLQ0O9aEAPQxZFkrewhhXZP0oA/X3N9F3alYwmm0\nnnN7IxkxUtH5lAQnMATqSm724fyEwQe8scX68thiQQKBgQDqibWMGdMFa63HMvKl\n9zyDl9ZAdj0AXpVk2nnLccCZ04e5GkmovO4E6iNY7DB0CiNGwmh4yY6SGHjcEmOM\nbTGR8B706WTP5B8pHWJ11O2eeeqamPxdkh+HOGVI+LkXCf5WkHLyxX/G2Q0UBfsL\nir55STlC8SCNt9qOVr8O2j34YQKBgQDb6sYJURoZYkQq9tq8c00ShZhwP6NR5qoL\nz0RD5BBeMEEtkVntc934XaWc2w5sBVSD+AqtarwOLJ1hOw64LgoWLbsse7upaEYI\n/4m4cXjd+tYOEXOb0FEYAfrtfY+ENREDF5ttYECM3n0k0c09SmLD+iGrpOnP5bfu\nCH2rwyKgzQKBgQDW7ErJkACoPvyIRk/FdsKldEaJ29AavpH4UZy6qgrs68K8BTLq\nxfb32fd6TTY5n/CjrxM9XLahenuGb/N5g7ahHYHAvP/84fcMHjlT8UOurdomwXrB\n5F2v9CYcsJAsZKQFf2lWv1VQSyaI6tIayZGyYz9t8Lj8JTbKqQN8ANI5AQKBgQCm\nqPs/oEjJJ+FFNiJ6Yl7sRHZLys54iPghTwgK81E8MBGU+OxPuVlkmYOipZf+YOO1\nx0pANf0iOMlkIB99kNZwDGQmx/Zl4fIBa7bxIn1YrHl/29XjJTHvocCKLneO17B2\nyXMupp0EpK/uMVj6s965alwN+kJ/HTYQnDqw6obZmQKBgQDj8cehbi+g6oFD8Dbj\nUNS+Oz+CrXxPha7baPYmvA7r1q5sg7J5xslSdAyEHimnVi3j0/0h4tSPYyN91x30\nd1o+hinqiz1Cqzx1BVSE4XXnJE4vzrbC7o8eOJfeWrJnxgdL1ZaSIZhEzMpG8Ffo\n1VQOZkZi93FUcJr9RZNpZk3Lbg==\n-----END PRIVATE KEY-----\n",
+          "private_key": my_private_key,
           "client_email": "hotdog-app-new@hotdog-billing-492413.iam.gserviceaccount.com",
           "client_id": "107807598057562047821",
           "auth_uri": "https://accounts.google.com/o/oauth2/auth",
