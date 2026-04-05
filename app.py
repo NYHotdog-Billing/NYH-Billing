@@ -7,7 +7,7 @@ from google.oauth2.service_account import Credentials
 # --- पेज की सेटिंग ---
 st.set_page_config(page_title="New York's Hotdog", page_icon="🌭", layout="wide")
 
-# --- 1. गूगल शीट से कनेक्शन ---
+# --- 1. गूगल शीट से कनेक्शन (ब्रह्मास्त्र के साथ) ---
 @st.cache_resource
 def init_connection():
     try:
@@ -15,7 +15,12 @@ def init_connection():
             "https://www.googleapis.com/auth/spreadsheets", 
             "https://www.googleapis.com/auth/drive"
         ]
-        creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scopes)
+        
+        # यह हिस्सा मोबाइल के कॉपी-पेस्ट वाले PEM एरर को खुद बैकग्राउंड में ठीक करेगा
+        credentials_dict = dict(st.secrets["gcp_service_account"])
+        credentials_dict["private_key"] = credentials_dict["private_key"].replace("\\n", "\n")
+        
+        creds = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
         return gspread.authorize(creds)
     except Exception as e:
         st.error(f"प्रमाणीकरण (Authentication) एरर: {e}. कृपया Secrets चेक करें।")
@@ -46,9 +51,8 @@ with tab1:
     st.markdown("---")
     st.subheader("Select Items from Menu")
 
-    # --- आपका असली मेन्यू (मेन्यू कार्ड फोटो के अनुसार) ---
+    # --- आपका असली मेन्यू ---
     menu = {
-        # --- HOTDOGS --- (image_15.png)
         "New York's Hotdog (Classic)": 99,
         "Cheese Hotdog (Cheese Sausage)": 109,
         "Breakfast Hotdog (Paneer & Egg)": 109,
@@ -59,7 +63,6 @@ with tab1:
         "Coney Onion Hotdog (Smoky Sauces)": 139,
         "Mexican Street Hotdog (Chicken Bacon)": 149,
         "Loaded Hotdog (Veggies/Pepperoni)": 159,
-        # --- SIDES & NUGGETS --- (image_16.png)
         "French Fries (Small)": 59,
         "French Fries (Medium)": 79,
         "French Fries (Large)": 119,
@@ -68,7 +71,6 @@ with tab1:
         "Chicken Nuggets (15 Pcs bucket)": 229,
         "Pizza Pockets (3 Pcs snack)": 89,
         "Pizza Pockets (5 Pcs party)": 139,
-        # --- BEVERAGES & MEALS --- (image_16.png)
         "Cold Drink (Small)": 20,
         "Cold Drink (Medium - Option 1)": 40,
         "Cold Drink (Medium - Option 2)": 50,
@@ -78,12 +80,9 @@ with tab1:
         "(3) Big Meal Add-on": 139
     }
     
-    # मेन्यू को कैटेगरी के अनुसार दिखाने के लिए multiselect
     selected_items = st.multiselect("Pick Items", list(menu.keys()))
-    
     discount = st.number_input("Discount (₹)", min_value=0, value=0, step=1)
     
-    # कैलकुलेशन
     total_amount = sum([menu[item] for item in selected_items])
     final_amount = total_amount - discount
     
@@ -103,23 +102,15 @@ with tab1:
              st.error("गूगल शीट से कनेक्शन नहीं है। कृपया Secrets चेक करें।")
         else:
             try:
-                # शीट खोलें
                 sheet = client.open(SHEET_NAME).sheet1 
-                
-                # समय और तारीख
                 time_str = datetime.now().strftime("%H:%M:%S")
                 date_str = date_of_bill.strftime("%Y-%m-%d")
-                
-                # आइटम को एक लाइन में जोड़ना
                 items_str = ", ".join(selected_items)
                 
-                # डेटा को शीट में भेजना (नया क्रम: Mobile Number के साथ)
-                # क्रम: तारीख, समय, ग्राहक का नाम, मोबाइल नंबर, स्टाफ, आइटम्स, टोटल, डिस्काउंट, फाइनल
                 row_data = [date_str, time_str, customer_name, mobile_number, staff, items_str, total_amount, discount, final_amount]
                 sheet.append_row(row_data)
                 
                 st.success(f"✅ बिल ₹{final_amount} ग्राहक '{customer_name}' के लिए सफलतापूर्वक सेव हो गया!")
-                # फॉर्म साफ़ करने के लिए (Streamlit automatic refresh)
                 st.balloons()
             except Exception as e:
                 st.error(f"गूगल शीट में डेटा सेव करने में एरर: {e}")
@@ -139,11 +130,8 @@ with tab2:
                 
                 if data:
                     df = pd.DataFrame(data)
-                    # डेटा दिखाना
                     st.dataframe(df, use_container_width=True)
                     
-                    # 'Final Amount' (आखरी कॉलम) का टोटल निकालना
-                    # ध्यान दें: अगर आपकी शीट में हेडर अलग है तो इसे बदलें, वरना यह आखरी कॉलम का टोटल करेगा।
                     total_sales = df.iloc[:, -1].sum() 
                     st.metric(label="Overall Total Sales", value=f"₹ {total_sales:,.2f}")
                 else:
